@@ -1,0 +1,92 @@
+Master SUDO Code
+
+declare a variable for the MIDI status, note and velocity byte
+	MIDI_STATUS
+	MIDI_NOTE
+	MIDI_VELOCITY
+
+
+ISR
+	Is UART Rx receive set? 	If Y > process UART, skip if N
+	Is I2C flag set? 		If Y > call I2C Tx routine, skip if N
+
+UARTProccessing
+	check the bottom nibble of the status byte (bits 0-3) to check for channel
+		If channel number doesn't match RETFIE
+		If channel number is 0 proceed
+		If channel number matches proceed
+	Check note range and alter note byte if necessary
+	Save each of 3 bytes (Status, note, and velocity)
+	clear UART flags for next transmission
+	set I2C flag
+	Retfie
+
+MAIN
+NOP
+GOTO MAIN
+END
+
+
+
+Pluck/Mute SUDO Code
+
+declare a variable for the MIDI status, note and velocity byte
+	MIDI_STATUS
+	MIDI_NOTE
+	MIDI_VELOCITY
+	; at this point in time only the status and note byte will be getting checked
+
+ISR
+	Is I2C flag set? 		If Y > call I2C Rx routine, skip if N
+		return here after I2C Rx
+		Call Mute check
+
+Mute Check
+	If note off is active mute the previously plucked string
+	GOTO String Math
+
+String Math
+; set a bit high for what string to be hit
+; if same string as last hit use second solenoid for that string
+	Notes 0x1D - 0x2B are E string
+	Notes 0x22 - 0x30 are A string
+	Notes 0x27 - 0x35 are D string
+	Notes 0x2C - 0x3A are G string
+	Notes greater than 0x3A cannot be played with this instrument, return/do nothing
+; make lowest string the string to be hit ex: 2C goes to the a string even though it could be on the d string or g string
+	RETFIE
+
+
+MAIN
+NOP
+GOTO MAIN
+END
+
+
+
+
+Fret SUDO Code
+
+declare a variable for the MIDI status, note and velocity byte
+	MIDI_STATUS
+	MIDI_NOTE
+	MIDI_VELOCITY
+	; this slave will only every need the note byte
+
+ISR
+	Is I2C flag set? 		If Y > call I2C Rx routine, skip if N
+		return here after I2C Rx
+		Call Fret Math
+	RETFIE
+
+Fret Math
+	; the lower the note the higher on the neck the fret, ex fret 0 is the topmost fret
+	Notes 0x1C, 0x21, 0x26 and 0x2B are fret 0 ; no fret is used purely a string hit no fret action
+	; *Refer to Midi Notes and Real Notes.ods for the notes and their associated fret
+	activate bit for active fret
+	RETURN
+
+MAIN
+NOP
+GOTO MAIN
+END
