@@ -1,0 +1,84 @@
+DATA_BYTE#			EQU	H'040'
+DATA_RX_1			EQU	H'041'
+DATA_RX_2			EQU	H'042'
+
+I2C_CODE    CODE
+
+I2C_SETUP_PERIPHERAL
+    BANKSEL TRISC
+    BSF TRISC,3
+    BSF TRISC,4		;Set SCL and SDA as inputs
+    BANKSEL SSPCON
+    MOVLW H'3E'
+    MOVWF SSPCON		;Enable SDA and SCL Pins, Enable Clock, and Set as 7 bit address Slave
+    BANKSEL SSPCON2
+    MOVLW H'81'
+    MOVWF SSPCON2		;Enable General Call and Enable Clock Strechting
+    BANKSEL SSP1CON3		
+    MOVLW H'0B'
+    MOVWF SSP1CON3		;Disable Slave Interrupts, SDA Hold Time of 300nS, Auto Enable Address and Data Clock Stretching
+    BANKSEL SSPSTAT
+    MOVLW H'80'
+    MOVWF SSPSTAT		;Disable Slew Rate Control and flags
+    BANKSEL SSPMSK
+    MOVLW H'FE'
+    MOVWF SSPMSK		;Enable address matching
+    RETURN
+
+I2C_READ:
+    BANKSEL SSPCON1
+    BCF SSPCON1, CKP
+    BANKSEL PIR1
+    BTFSS PIR1, SSP1IF
+    GOTO GOOD_STOP
+    BANKSEL SSPSTAT
+    BTFSC SSPSTAT, 2
+    GOTO LOAD_BUFFER
+    BTFSC SSPSTAT, 5
+    GOTO RX_DATA
+    BANKSEL SSPBUF
+    MOVFW SSPBUF
+    BANKSEL PORTB
+    BSF PORTB, 1
+    BANKSEL DATA_BYTE#
+    CLRF DATA_BYTE#
+    GOTO GOOD_STOP
+    
+LOAD_BUFFER
+    ;LOAD BUFFER WITH DATA FOR THE MASTER TO READ
+    GOTO GOOD_STOP
+    
+RX_DATA
+    BANKSEL DATA_BYTE#
+    BTFSC DATA_BYTE#, 0
+    GOTO RX_TWO
+RX_ONE
+    BANKSEL PORTB
+    BSF PORTB, 5
+    BANKSEL SSPBUF
+    MOVFW SSPBUF
+    BANKSEL DATA_RX_1
+    MOVWF DATA_RX_1
+    BANKSEL DATA_BYTE#
+    BSF DATA_BYTE#, 0
+    GOTO GOOD_STOP
+RX_TWO
+    BANKSEL SSPBUF
+    MOVFW SSPBUF
+    BANKSEL DATA_RX_2
+    MOVWF DATA_RX_2
+    BANKSEL DATA_BYTE#
+    BCF DATA_BYTE#, 0
+    
+GOOD_STOP
+    BANKSEL PIR1
+    BCF PIR1, SSP1IF
+    BANKSEL SSPCON1
+    BSF SSPCON1, CKP
+    BANKSEL SSPCON2
+    BSF SSPCON2,2		;Generate a Stop Condition
+GOOD_STOP_DONE
+    BTFSC SSPCON2,2
+    GOTO GOOD_STOP_DONE	;Wait Until Stop Condition Completes
+    MOVLW H'00'
+    RETURN			;Write Complete.  Return With 0x00 in Working Register
