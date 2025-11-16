@@ -1,4 +1,4 @@
-26767826489291304
+26774878731663785
 2JB_Footprints
 1X1_100mil_Header
 
@@ -77,6 +77,20 @@
 10
 10
 2JB_Footprints
+1x9_100mil_Header
+
+
+0
+9
+9
+2JB_Footprints
+2PinMolex
+
+430450200 
+0
+2
+2
+2JB_Footprints
 2Pin_TO-220
 
 
@@ -104,6 +118,13 @@
 0
 2
 2
+2JB_Footprints
+8PinMolex_3.00mmPitch
+
+430450810 
+0
+10
+10
 2JB_Footprints
 28_SSOP_IC
 
@@ -153,6 +174,13 @@ RCA Jack P177
 0
 2
 2
+2JB_Footprints
+RJ11
+615004141121-2
+Connector
+0
+4
+4
 2JB_Footprints
 R_0805
 
